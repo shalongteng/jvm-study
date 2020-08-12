@@ -20,7 +20,7 @@
             偏向线程ID、偏向时间戳等，官方称它为。
             
             25个比特用于存储对象哈希码，4个比特用于存储对象分代年 龄，2个比特用于存储锁标志位，1个比特固定为0，
-        Klass Word (32 bits)
+        Klass pointer (32 bits) 压缩指针
             类型指针指向对象所属类（元数据）的指针，JVM通过这个确定这个对象属于哪个类。
         array length(32bits) 数组特有
     实例数据（Instance Data）
@@ -37,4 +37,15 @@
 
         直接指针
             使用直接指针来访问最大的好处就是速度更快，
-#4、 
+#4、指针压缩
+    对象头 Klass pointer
+        -XX:+UseCompressedClassPointers
+        八个字节 压缩成 四个字节
+        内存超过32G，自动失效
+        
+        java对象都是8字节对齐，4*8
+    普通指向指针：
+        -XX:+UseCompressedOops
+        开启压缩 4
+        不开压缩 8
+        

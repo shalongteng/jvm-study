@@ -1,115 +1,126 @@
 ### GC的基础知识
     gc调优 一般就是gc的选择和参数设置。
+        吞吐量
+        响应时间
 #### 1.什么是垃圾
-
-> C语言申请内存：malloc free
-> C++： new delete
-> c/C++ 手动回收内存
->
-> Java: new ？
->
-> 自动内存回收，编程上简单，系统不容易出错，手动释放内存，容易出两种类型的问题：
->
-> 1. 忘记回收
-> 2. 多次回收
-
-没有任何引用指向的一个对象或者多个对象（循环引用）
-
+    没有任何引用指向的一个对象或者多个对象（循环引用）
+    如果某个对象到GC Roots间没有任何引用链相连，则证明此对象是不可能再被使用的。
+    
+    C语言申请内存：malloc free
+    C++： new delete
+    c/C++ 手动回收内存
+    
+    手动释放内存，容易出两种类型的问题：
+    1. 忘记回收
+    2. 多次回收
+    
+    自动内存回收，编程上简单，系统不容易出错。
+    Java: new 
+    
 #### 2.如何定位垃圾
-
-1. 引用计数（ReferenceCount） 不能解决循环引用问题
-2. 根可达算法(RootSearching)
-    静态变量，常量，栈变量，JNI指针，Clazz
+    1. 引用计数（ReferenceCount） 不能解决循环引用问题
+    2. 根可达算法(RootSearching)
+        静态变量，常量，栈变量，本地方法栈变量，JNI指针，Clazz
 
 #### 3.常见的垃圾回收算法
-
-1. 标记清除(mark sweep)   - 产生碎片 效率偏低（两遍扫描）
-2. 拷贝算法 (copying)     - 没有碎片，浪费空间，内存分块。
-3. 标记压缩(mark compact) - 没有碎片，效率偏低（两遍扫描，指针需要调整）
+    1. 标记清除(mark sweep)   - 产生碎片 效率偏低（两遍扫描）  cms
+    2. 拷贝算法 (copying)     - 没有碎片，浪费空间，内存分块。
+    3. 标记压缩(mark compact) - 没有碎片，效率偏低（两遍扫描，指针需要调整）
 
 #### 4.JVM内存分代模型（用于分代垃圾回收算法）
+    1.JVM内存分代模型
+       新生代 + 老年代 + 永久代（1.7）Perm Generation/ 元数据区(1.8) Metaspace
+       1. 永久代 元数据 - Class
+       2. 永久代必须指定大小限制 ，元数据可以设置，也可以不设置，无上限（受限于物理内存）
+       3. 字符串常量 1.7 - 永久代，1.8 - 堆
+       4. MethodArea 逻辑概念 - 永久代、元数据
+       
+    2. 部分垃圾回收器使用的模型
+    
+       除Epsilon ZGC Shenandoah之外的GC都是使用逻辑分代模型
+       G1是逻辑分代，物理不分代
+       
+       除此之外不仅逻辑分代，而且物理分代
 
-1. 部分垃圾回收器使用的模型
-
-   > 除Epsilon ZGC Shenandoah之外的GC都是使用逻辑分代模型
-   >
-   > G1是逻辑分代，物理不分代
-   >
-   > 除此之外不仅逻辑分代，而且物理分代
-
-2. 新生代 + 老年代 + 永久代（1.7）Perm Generation/ 元数据区(1.8) Metaspace
-   1. 永久代 元数据 - Class
-   2. 永久代必须指定大小限制 ，元数据可以设置，也可以不设置，无上限（受限于物理内存）
-   3. 字符串常量 1.7 - 永久代，1.8 - 堆
-   4. MethodArea 逻辑概念 - 永久代、元数据
+    3. 新生代 = Eden + 2个suvivor区 
+       1. YGC回收之后，大多数的对象会被回收，活着的进入s0
+       2. 再次YGC，活着的对象eden + s0 -> s1
+       3. 再次YGC，eden + s1 -> s0
+       4. 年龄足够 -> 老年代 （15 CMS 6）
+       5. s区装不下 -> 老年代
    
-3. 新生代 = Eden + 2个suvivor区 
-   1. YGC回收之后，大多数的对象会被回收，活着的进入s0
-   2. 再次YGC，活着的对象eden + s0 -> s1
-   3. 再次YGC，eden + s1 -> s0
-   4. 年龄足够 -> 老年代 （15 CMS 6）
-   5. s区装不下 -> 老年代
+    4. 老年代
+       1. 顽固分子
+       2. 老年代满了FGC Full GC
    
-4. 老年代
-   1. 顽固分子
-   2. 老年代满了FGC Full GC
+    5. GC Tuning (Generation)
+       1. 尽量减少FGC
+       2. MinorGC = YGC
+       3. MajorGC = FGC
    
-5. GC Tuning (Generation)
-   1. 尽量减少FGC
-   2. MinorGC = YGC
-   3. MajorGC = FGC
-   
-6. 对象分配过程图
-   ![](对象分配过程详解.png)
+    6. 对象分配过程图
+       ![](对象分配过程详解.png)
+          
 
-7. 动态年龄：（不重要）
-   https://www.jianshu.com/p/989d3b06a49d
+    7. 动态年龄：
+       https://www.jianshu.com/p/989d3b06a49d
+       虚拟机并不是永远地要求对象的年龄必须达到了MaxTenuringThreshold才能晋升老年代，
+       如果在Survivor空间中相同年龄所有对象大小的总和大于Survivor空间的一半，
+       年龄大于或等于该年龄的对象就可以直接进入老年代，无须等到MaxTenuringThreshold中要求的年龄。
+       
+       年龄1的占用了33%，年龄2的占用了33%，累加和超过默认的TargetSurvivorRatio（50%），
+       年龄2和年龄3的对象都要晋升。 
+  
 
-8. 分配担保：（不重要）
-   YGC期间 survivor区空间不够了 空间担保直接进入老年代
-   参考：https://cloud.tencent.com/developer/article/1082730
-
+    8. 分配担保：
+       YGC期间 survivor区空间不够了 空间担保直接进入老年代
+       参考：https://cloud.tencent.com/developer/article/1082730
+       
+       在不同的GC机制下，也就是不同垃圾回收器组合下，担保机制也略有不同。在Serial+Serial Old的情况下，
+       发现放不下就直接启动担保机制；在Parallel Scavenge+Serial Old的情况下，却是先要去判断一下要
+       分配的内存是不是>=Eden区大小的一半，如果是那么直接把该对象放入老生代，否则才会启动担保机制。
+       
+       分配担保是把Eden、区对象放到老年代。
 #### 5.常见的垃圾回收器
-
-![常用垃圾回收器](常用垃圾回收器.png)
-   调优：
-       调吞吐量
-       调响应时间
-   垃圾回收期发展路线，是按照内存越来越大的过程来演进。
+    ![常用垃圾回收器](常用垃圾回收器.png)
+    1.垃圾回收期发展路线，
+        是按照内存越来越大的过程来演进。
         从分代算法演化到不分代算法。
-        Serial算法 几兆-几十兆
-        parallel算法 几个G 十几个G
-        cms算法  几十个G  承上启下，开始并发回收  
-            三色标记-错标-增量更新-remark +写屏障
-        G1 一百G   逻辑分代，物理不分代
-            三色标记-SATB（不需要remark） +写屏障
-        ZGC、Shenandoah 一个T  逻辑，物理都不分代
-            颜色指针（面试面不到一般，资料比较少） + 读屏障
-            颜色指针+写屏障
-        Eplison  啥也不干 调试使用  确认不用gc、就能干完活。
+            
+    1. JDK诞生 Serial追随 
+       提高效率，诞生了PS，
+       为了配合CMS，诞生了PN，
+       CMS是1.4版本后期引入，CMS是里程碑式的GC，开启了并发回收的过程，但CMS毛病较多，没有任何一个JDK版本默认是CMS
+       并发垃圾回收是因为无法忍受STW
+       
+    2. Serial 年轻代 串行回收
+            几M到几十M
+    3. PS 年轻代 并行回收
+            几G到十几G
+    4. ParNew 年轻代 配合CMS的并行回收
         
-1. JDK诞生 Serial追随 提高效率，诞生了PS，为了配合CMS，诞生了PN，CMS是1.4版本后期引入，
-   CMS是里程碑式的GC，它开启了并发回收的过程，但是CMS毛病较多，因此目前没有任何一个JDK版本默认是CMS
-   并发垃圾回收是因为无法忍受STW
-2. Serial 年轻代 串行回收
-3. PS 年轻代 并行回收
-4. ParNew 年轻代 配合CMS的并行回收
-5. SerialOld 
-6. ParallelOld
-7. ConcurrentMarkSweep 老年代 并发的， 垃圾回收和应用程序同时运行，降低STW的时间(200ms)
-   CMS问题比较多，所以现在没有一个版本默认是CMS，只能手工指定
-   CMS既然是MarkSweep，就一定会有碎片化的问题，碎片到达一定程度，CMS的老年代分配对象分配不下的时候，使用SerialOld 进行老年代回收
-   想象一下：
-   PS + PO -> 加内存 换垃圾回收器 -> PN + CMS + SerialOld（几个小时 - 几天的STW）
-   几十个G的内存，单线程回收 -> G1 + FGC 几十个G -> 上T内存的服务器 ZGC
-   算法：三色标记 + Incremental Update
-8. G1(10ms)
-   算法：三色标记 + SATB
-9. ZGC (1ms) PK C++
-   算法：ColoredPointers + LoadBarrier
-10. Shenandoah
-    算法：ColoredPointers + WriteBarrier
-11. Eplison  
+    5. SerialOld 
+    6. ParallelOld
+    
+    7. ConcurrentMarkSweep 老年代 并发的， 垃圾回收和应用程序同时运行，降低STW的时间(200ms)
+       CMS问题比较多，所以现在没有一个版本默认是CMS，只能手工指定
+       CMS既然是MarkSweep，会有碎片化的问题，碎片到达一定程度，CMS的老年代分配对象分配不下的时候，使用SerialOld 进行老年代回收
+       想象一下：
+       PS + PO -> 加内存 换垃圾回收器 -> PN + CMS + SerialOld（几个小时 - 几天的STW）
+       几十个G的内存，单线程回收 -> G1 + FGC 几十个G -> 上T内存的服务器 ZGC
+       
+       算法：三色标记 + Incremental Update + remark +写屏障
+    8. G1(10ms)
+       算法：三色标记 + SATB +写屏障
+       
+    9. ZGC (1ms) PK C++
+       算法：ColoredPointers + LoadBarrier
+    10. Shenandoah
+        算法：ColoredPointers + WriteBarrier
+    11. Eplison  
+        啥也不干 调试使用  
+        确认不用gc、就能干完活
+        
 12. PS 和 PN区别的延伸阅读：
     ▪[https://docs.oracle.com/en/java/javase/13/gctuning/ergonomics.html#GUID-3D0BB91E-9BFF-4EBB-B523-14493A860E73](https://docs.oracle.com/en/java/javase/13/gctuning/ergonomics.html)
 13. 垃圾收集器跟内存大小的关系
@@ -400,7 +411,8 @@ total = eden + 1个survivor
 
 8. jinfo pid 
 
-9. jstat -gc 动态观察gc情况 / 阅读GC日志发现频繁GC / arthas观察 / jconsole/jvisualVM/ Jprofiler（最好用）
+9. jstat -gc 动态观察gc情况 / 阅读GC日志发现频繁GC / 
+    arthas观察 / jconsole/jvisualVM/ Jprofiler（最好用）
    jstat -gc 4655 500 : 每个500个毫秒打印GC的情况
    如果面试官问你是怎么定位OOM问题的？如果你回答用图形界面（错误）
    1：已经上线的系统不用图形界面用什么？（cmdline arthas）
@@ -456,7 +468,7 @@ jhat -J-mx512M xxx.dump
 
 #### jprofiler (收费)
 
-#### arthas在线排查工具
+#### arthas在线排查工具  jvmti
 
 * 为什么需要在线排查？
    在生产上我们经常会碰到一些不好排查的问题，例如线程安全问题，用最简单的threaddump或者heapdump不好查到问题原因。为了排查这些问题，有时我们会临时加一些日志，比如在一些关键的函数里打印出入参，然后重新打包发布，如果打了日志还是没找到问题，继续加日志，重新打包发布。对于上线流程复杂而且审核比较严的公司，从改代码到上线需要层层的流转，会大大影响问题排查的进度。 
