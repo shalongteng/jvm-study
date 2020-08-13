@@ -172,7 +172,7 @@
 
   试验用程序：
 
-  ```java
+ ```java
   import java.util.List;
   import java.util.LinkedList;
   
@@ -186,7 +186,7 @@
       }
     }
   }
-  ```
+ ```
 
   
 面试：
