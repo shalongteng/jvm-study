@@ -423,10 +423,10 @@ total = eden + 1个survivor
 11. jmap -dump:format=b,file=xxx pid ：
 
     线上系统，内存特别大，jmap执行期间会对进程产生很大影响，甚至卡顿（电商不适合）
-    1：设定了参数HeapDump，OOM的时候会自动产生堆转储文件
+    1：设定了参数HeapDump，OOM的时候会自动产生堆转储文件（不是很专业，因为有监控，会报警）
     2：<font color='red'>很多服务器备份（高可用），停掉这台服务器对其他服务器不影响</font>
     3：在线定位(一般小点儿公司用不到)
-
+    4 在测试环境压测
 12. java -Xms20M -Xmx20M -XX:+UseParallelGC -XX:+HeapDumpOnOutOfMemoryError com.mashibing.jvm.gc.T15_FullGC_Problem01
 
 13. 使用MAT / jhat /jvisualvm 进行dump文件分析
