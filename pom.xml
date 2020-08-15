@@ -40,10 +40,23 @@
                 </exclusion>
             </exclusions>
         </dependency>
+<<<<<<< HEAD
+=======
+        <!-- cglib 动态代理依赖 begin -->
+        <dependency>
+            <groupId>cglib</groupId>
+            <artifactId>cglib</artifactId>
+            <version>3.2.5</version>
+        </dependency>
+>>>>>>> 78a233db51c1b6d840f7ba68b2fbe7129bad78ac
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
         </dependency>
+<<<<<<< HEAD
+=======
+        <!-- cglib 动态代理依赖 stop -->
+>>>>>>> 78a233db51c1b6d840f7ba68b2fbe7129bad78ac
     </dependencies>
 
     <build>
@@ -51,6 +64,14 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                </configuration>
             </plugin>
         </plugins>
     </build>
