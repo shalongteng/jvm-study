@@ -13,5 +13,6 @@ public class T {
         }
         long l2 = r.freeMemory();
         System.out.println((l1 - l2)/100_0000);
+
     }
 }

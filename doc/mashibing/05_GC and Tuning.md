@@ -645,7 +645,7 @@ OOM产生的原因多种多样，有些程序未必产生OOM，不断FGC(CPU飙�
    	at java.lang.reflect.Method.invoke(Method.java:498)
    	at sun.instrument.InstrumentationImpl.loadClassAndStartAgent(InstrumentationImpl.java:388)
    	at sun.instrument.InstrumentationImpl.loadClassAndCallAgentmain(InstrumentationImpl.java:411)
-   Caused by: java.lang.OutOfMemoryError: Compressed class space
+   Caused by: java.lang.Ou tOfMemoryError: Compressed class space
    	at sun.misc.Unsafe.defineClass(Native Method)
    	at sun.reflect.ClassDefiner.defineClass(ClassDefiner.java:63)
    	at sun.reflect.MethodAccessorGenerator$1.run(MethodAccessorGenerator.java:399)

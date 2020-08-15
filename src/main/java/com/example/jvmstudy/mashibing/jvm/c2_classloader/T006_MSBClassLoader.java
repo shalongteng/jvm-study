@@ -1,6 +1,7 @@
 package com.example.jvmstudy.mashibing.jvm.c2_classloader;
 
-import com.mashibing.jvm.Hello;
+
+import com.example.jvmstudy.mashibing.jvm.Hello;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
