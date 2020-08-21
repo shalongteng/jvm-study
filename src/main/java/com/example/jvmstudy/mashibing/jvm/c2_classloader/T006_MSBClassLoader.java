@@ -2,6 +2,7 @@ package com.example.jvmstudy.mashibing.jvm.c2_classloader;
 
 
 import com.example.jvmstudy.mashibing.jvm.Hello;
+import org.apache.tools.ant.taskdefs.Classloader;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -34,10 +35,11 @@ public class T006_MSBClassLoader extends ClassLoader {
 
     public static void main(String[] args) throws Exception {
         ClassLoader l = new T006_MSBClassLoader();
-        Class clazz = l.loadClass("com.mashibing.jvm.Hello");
-        Class clazz1 = l.loadClass("com.mashibing.jvm.Hello");
+        Class clazz = l.loadClass("com.example.jvmstudy.mashibing.jvm.Hello");
+        Class clazz1 = l.loadClass("com.example.jvmstudy.mashibing.jvm.Hello");
 
         System.out.println(clazz == clazz1);
+        System.out.println(clazz == Hello.class);
 
         Hello h = (Hello)clazz.newInstance();
         h.m();

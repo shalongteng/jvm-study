@@ -1,6 +1,6 @@
 package com.example.jvmstudy.mashibing.jvm.c5_gc;
 
-//-XX:+PrintGCDetails -XX:+UseConcMarkSweepGC -XX:+PrintFlagsFinal -XX:+PrintVMOptions -
+//-XX:+PrintGCDetails -XX:+UseConcMarkSweepGC -XX:+PrintFlagsFinal -XX:+PrintVMOptions
 public class T01_HelloGC {
     public static void main(String[] args) {
 

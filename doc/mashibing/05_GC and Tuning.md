@@ -83,6 +83,8 @@
        分配担保是把Eden、区对象放到老年代。
 #### 5.常见的垃圾回收器
     ![常用垃圾回收器](常用垃圾回收器.png)
+    1.8默认的垃圾回收：PS + ParallelOld
+    
     1.垃圾回收期发展路线，
         是按照内存越来越大的过程来演进。
         从分代算法演化到不分代算法。
@@ -103,75 +105,62 @@
     6. ParallelOld
     
     7. ConcurrentMarkSweep 老年代 并发的， 垃圾回收和应用程序同时运行，降低STW的时间(200ms)
+       20G
        CMS问题比较多，所以现在没有一个版本默认是CMS，只能手工指定
        CMS既然是MarkSweep，会有碎片化的问题，碎片到达一定程度，CMS的老年代分配对象分配不下的时候，使用SerialOld 进行老年代回收
+       
        想象一下：
        PS + PO -> 加内存 换垃圾回收器 -> PN + CMS + SerialOld（几个小时 - 几天的STW）
        几十个G的内存，单线程回收 -> G1 + FGC 几十个G -> 上T内存的服务器 ZGC
        
-       算法：三色标记 + Incremental Update + remark +写屏障
+       算法：三色标记 + Incremental Update + remark +写后屏障（维护卡表）
     8. G1(10ms)
-       算法：三色标记 + SATB +写屏障
+       算法：三色标记 + 原始快照(SATB) +写前屏障（维护卡表）
+       上百G
        
     9. ZGC (1ms) PK C++
-       算法：ColoredPointers + LoadBarrier
+        算法：ColoredPointers + LoadBarrier
+        4T - 16T（JDK13）
     10. Shenandoah
         算法：ColoredPointers + WriteBarrier
     11. Eplison  
         啥也不干 调试使用  
         确认不用gc、就能干完活
         
-12. PS 和 PN区别的延伸阅读：
-    ▪[https://docs.oracle.com/en/java/javase/13/gctuning/ergonomics.html#GUID-3D0BB91E-9BFF-4EBB-B523-14493A860E73](https://docs.oracle.com/en/java/javase/13/gctuning/ergonomics.html)
-13. 垃圾收集器跟内存大小的关系
-    1. Serial 几十兆
-    2. PS 上百兆 - 几个G
-    3. CMS - 20G
-    4. G1 - 上百G
-    5. ZGC - 4T - 16T（JDK13）
-
-1.8默认的垃圾回收：PS + ParallelOld
-
+    12. PS 和 PN区别的延伸阅读：
+        ▪[https://docs.oracle.com/en/java/javase/13/gctuning/ergonomics.html#GUID-3D0BB91E-9BFF-4EBB-B523-14493A860E73]
+        (https://docs.oracle.com/en/java/javase/13/gctuning/ergonomics.html)
+    
 ### 常见垃圾回收器组合参数设定：(1.8)
-
-* -XX:+UseSerialGC = Serial New (DefNew) + Serial Old
-  * 小型程序。默认情况下不会是这种选项，HotSpot会根据计算及配置和JDK版本自动选择收集器
-* -XX:+UseParNewGC = ParNew + SerialOld
-  * 这个组合已经很少用（在某些版本中已经废弃）
-  * https://stackoverflow.com/questions/34962257/why-remove-support-for-parnewserialold-anddefnewcms-in-the-future
-* -XX:+UseConc<font color=red>(urrent)</font>MarkSweepGC = ParNew + CMS + Serial Old
-* -XX:+UseParallelGC = Parallel Scavenge + Parallel Old (1.8默认) 【PS + SerialOld】
-* -XX:+UseParallelOldGC = Parallel Scavenge + Parallel Old
-* -XX:+UseG1GC = G1
-* Linux中没找到默认GC的查看方法，而windows中会打印UseParallelGC 
-  * java +XX:+PrintCommandLineFlags -version
-  * 通过GC的日志来分辨
-
-* Linux下1.8版本默认的垃圾回收器到底是什么？
-
-  * 1.8.0_181 默认（看不出来）Copy MarkCompact
-  * 1.8.0_222 默认 PS + PO
+    * -XX:+UseSerialGC = Serial New (DefNew) + Serial Old
+      * 小型程序。默认情况下不会是这种选项，HotSpot会根据计算及配置和JDK版本自动选择收集器
+    * -XX:+UseParNewGC = ParNew + SerialOld
+      * 这个组合已经很少用（在某些版本中已经废弃）
+      * https://stackoverflow.com/questions/34962257/why-remove-support-for-parnewserialold-anddefnewcms-in-the-future
+    * -XX:+UseConcurrentMarkSweepGC = ParNew + CMS + Serial Old
+    * -XX:+UseParallelGC = Parallel Scavenge + Parallel Old (1.8默认) 【PS + SerialOld】
+    * -XX:+UseParallelOldGC = Parallel Scavenge + Parallel Old
+    * -XX:+UseG1GC = G1
+    
+    * Linux中没找到默认GC的查看方法，而windows中会打印UseParallelGC 
+      * java -XX:+PrintCommandLineFlags -version
+      * 通过GC的日志来分辨
+    
+    * Linux下1.8版本默认的垃圾回收器到底是什么？
+      * 1.8.0_181 默认（看不出来）Copy MarkCompact
+      * 1.8.0_222 默认 PS + PO
 
 ### JVM调优第一步，了解JVM常用命令行参数
-
-* JVM的命令行参数参考：https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html
-
-* HotSpot参数分类
-
-  > 标准： - 开头，所有的HotSpot都支持
-  >
-  > 非标准：-X 开头，特定版本HotSpot支持特定命令
-  >
-  > 不稳定：-XX 开头，下个版本可能取消
-
-  java -version
-
-  java -X
-
-  java -XX:PrintFlagsWithComments//只有debug版本能用
-
-  试验用程序：
-
+    * JVM的命令行参数参考：https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html
+    * HotSpot参数分类
+      > 标准：  - 开头，所有的HotSpot都支持
+        java -version
+      > 非标准：-X 开头，特定版本HotSpot支持特定命令
+        java -X
+      > 不稳定：-XX 开头，下个版本可能取消
+        java -XX:PrintFlagsWithComments//只有debug版本能用
+      
+      试验用程序：
  ```java
   import java.util.List;
   import java.util.LinkedList;
@@ -187,90 +176,73 @@
     }
   }
  ```
-
-  
-面试：
-    熟悉gc常用算法，熟悉常见的垃圾收集器，具有实际的jvm、调优经验。
-  1. 区分概念：内存泄漏memory leak，内存溢出out of memory
-  2. java -XX:+PrintCommandLineFlags HelloGC
-  3. java -Xmn10M -Xms40M -Xmx60M -XX:+PrintCommandLineFlags -XX:+PrintGC  HelloGC
-     PrintGCDetails PrintGCTimeStamps PrintGCCauses
-  4. java -XX:+UseConcMarkSweepGC -XX:+PrintCommandLineFlags HelloGC
-  5. java -XX:+PrintFlagsInitial 默认参数值
-  6. java -XX:+PrintFlagsFinal 最终参数值
-  7. java -XX:+PrintFlagsFinal | grep xxx 找到对应的参数
-  8. java -XX:+PrintFlagsFinal -version |grep GC
+    面试：
+      1. 区分概念：内存泄漏memory leak，导致----> 内存溢出out of memory
+      2. java -XX:+PrintCommandLineFlags HelloGC
+      3. java -Xmn10M -Xms40M -Xmx60M -XX:+PrintCommandLineFlags -XX:+PrintGC  HelloGC
+         PrintGCDetails PrintGCTimeStamps PrintGCCauses
+      4. java -XX:+UseConcMarkSweepGC -XX:+PrintCommandLineFlags HelloGC
+      5. java -XX:+PrintFlagsInitial 默认参数值
+      6. java -XX:+PrintFlagsFinal 最终参数值
+      7. java -XX:+PrintFlagsFinal | grep xxx 找到对应的参数
+      8. java -XX:+PrintFlagsFinal -version |grep GC
 
 ### PS GC日志详解
+    每种垃圾回收器的日志格式是不同的！
+    PS日志格式
+    ![GC日志详解](./GC日志详解.png)
 
-每种垃圾回收器的日志格式是不同的！
+    heap dump部分：
+    eden space 5632K, 94% used [0x00000000ff980000,0x00000000ffeb3e28,0x00000000fff00000)
+    后面的内存地址指的是，起始地址，使用空间结束地址，整体空间结束地址
 
-PS日志格式
-
-![GC日志详解](./GC日志详解.png)
-
-heap dump部分：
-
-```java
-eden space 5632K, 94% used [0x00000000ff980000,0x00000000ffeb3e28,0x00000000fff00000)
-                            后面的内存地址指的是，起始地址，使用空间结束地址，整体空间结束地址
-```
-
-![GCHeapDump](GCHeapDump.png)
-
-total = eden + 1个survivor
-
+    ![GCHeapDump](GCHeapDump.png)
+    total = eden + 1个survivor
 ### 调优前的基础概念：
-
-1. 吞吐量：用户代码时间 /（用户代码执行时间 + 垃圾回收时间）
-2. 响应时间：STW越短，响应时间越好
-
-所谓调优，首先确定，追求啥？吞吐量优先，还是响应时间优先？还是在满足一定的响应时间的情况下，要求达到多大的吞吐量...
-
-问题：
-
-科学计算，吞吐量。数据挖掘，thrput。吞吐量优先的一般：（PS + PO）
-
-响应时间：网站 GUI API （1.8 G1）
-
+    1. 吞吐量：用户代码时间 /（用户代码执行时间 + 垃圾回收时间）
+    2. 响应时间：STW越短，响应时间越好
+    
+    所谓调优，首先确定，追求啥？
+        吞吐量优先，        科学计算 ：（PS + PO）   
+        还是响应时间优先？   网站 GUI API （1.8 G1）
+        还是在满足一定的响应时间的情况下，要求达到多大的吞吐量...
+    
 ### 什么是调优？
-
-1. 根据需求进行JVM规划和预调优
-2. 优化运行JVM运行环境（慢，卡顿）
-3. 解决JVM运行过程中出现的各种问题(OOM)
+    1. 根据需求进行JVM规划和预调优
+    2. 优化运行JVM运行环境（慢，卡顿）
+    3. 解决JVM运行过程中出现的各种问题(OOM)
 
 ### 调优，从规划开始
-
-* 调优，从业务场景开始，没有业务场景的调优都是耍流氓
-  
-* 无监控（压力测试，能看到结果），不调优
-
-* 步骤：
-  1. 熟悉业务场景（没有最好的垃圾回收器，只有最合适的垃圾回收器）
-     1. 响应时间、停顿时间 [CMS G1 ZGC] （需要给用户作响应）
-     2. 吞吐量 = 用户时间 /( 用户时间 + GC时间) [PS]
-  2. 选择回收器组合
-  3. 计算内存需求（经验值 1.5G 16G）
-  4. 选定CPU（越高越好）
-  5. 设定年代大小、升级年龄
-  6. 设定日志参数
-     1. -Xloggc:/opt/xxx/logs/xxx-xxx-gc-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=20M -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCCause
-     2. 或者每天产生一个日志文件
-  7. 观察日志情况
-  
-* 案例1：垂直电商，最高每日百万订单，处理订单系统需要什么样的服务器配置？
-
-  > 这个问题比较业余，因为很多不同的服务器配置都能支撑(1.5G 16G)
-  >
-  > 1小时360000集中时间段， 100个订单/秒，（找一小时内的高峰期，1000订单/秒）
-  >
-  > 经验值，
-  >
-  > 非要计算：一个订单产生需要多少内存？512K * 1000 500M内存
-  >
-  > 专业一点儿问法：要求响应时间100ms
-  >
-  > 压测！
+    * 调优，从业务场景开始，没有业务场景的调优都是耍流氓
+      
+    * 无监控（压力测试，能看到结果），不调优
+    
+    * 步骤：
+      1. 熟悉业务场景（没有最好的垃圾回收器，只有最合适的垃圾回收器）
+         1. 响应时间、停顿时间 [CMS G1 ZGC] （需要给用户作响应）
+         2. 吞吐量 = 用户时间 /( 用户时间 + GC时间) [PS]
+      2. 选择回收器组合
+      3. 计算内存需求（经验值 1.5G 16G）
+      4. 选定CPU（越高越好）
+      5. 设定年代大小、升级年龄
+      6. 设定日志参数
+         1. -Xloggc:/opt/xxx/logs/xxx-xxx-gc-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=20M -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCCause
+         2. 或者每天产生一个日志文件
+      7. 观察日志情况
+      
+    * 案例1：垂直电商，最高每日百万订单，处理订单系统需要什么样的服务器配置？
+    
+      > 这个问题比较业余，因为很多不同的服务器配置都能支撑(1.5G 16G)
+      >
+      > 1小时360000集中时间段， 100个订单/秒，（找一小时内的高峰期，1000订单/秒）
+      >
+      > 经验值，
+      >
+      > 非要计算：一个订单产生需要多少内存？512K * 1000 500M内存
+      >
+      > 专业一点儿问法：要求响应时间100ms
+      >
+      > 压测！
 
 * 案例2：12306遭遇春节大规模抢票应该如何支撑？
 
