@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 从数据库中读取信用数据，套用模型，并把结果进行记录和传输
+ * -Xms200M -Xmx200M -XX:+PrintGC
+ * -Xms200M -Xmx200M -XX:+PrintGCDetails
  */
 
 public class T15_FullGC_Problem01 {
