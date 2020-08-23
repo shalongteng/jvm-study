@@ -5,22 +5,58 @@
     关于：Object o = new Object();请解释一下
     
     1.请解释一下对象创建过程？（半初始化）
-        new 指令
+        new 指令  半初始化，（赋默认值）
         invoksepcial 调用init 方法
         astore_1  将引用和对象 建立连接
     2.加问DCL与volatile问题？（指令重排）
-        
+        volatile作用：
+            保持线程可见性
+                  主内存中flag发生了变化。会通知线程。
+                  线程重新load一下 flag的值。
+            禁止指令重排
+            
+        cpu的乱序执行
+            两条指令，指令1 和 指令2
+            CPU进行【读等待】同时，执行指令是CPU的乱序的根源，是为了提高效率。
+            如果两条指令没有依赖关系，读指令1等待同时，会优先执行指令2.
+            
+            
     3.对象在内存中的布局？（对象与数组的不同）
+        对象头 
+            mark word       8个字节
+            class pointer   4个字节
+            array length
+        实例数据
+            属性
+        对其填充
+            8字节对齐
     4.对象头具体包括什么? (markword klasspointer)synchronized锁信息
+        mark word
+            identity hashcode
+            gc
+            lock
+                偏向锁
+                自旋锁
+                重量级锁
     5.对象怎么定位? (直接间接)
-    6.对象怎么分配? (栈上-线程本地- Eden -0ld)
-    7.object。= new Object()在内存中占用多少字节?
-
-#2、volitile作用
-    线程可见
+        句柄池
+            他的优点跟gc有关。gc对象复制
+            在垃圾回收过程中，不用频繁改动引用的指向。
+        直接指针
+            速度快
+            垃圾回收过程中，引用一直改变。
+    6.对象怎么分配? ()
+        栈上
+        线程本地
+        Eden
+        0ld
+    7.object o = new Object()在内存中占用多少字节?
+        16
+        o 4-8
+        32g内存以上  o膨胀成8个字节
         
-    禁止指令重排
-#3、
+    
+#2、面试题
     1. -XX:MaxTenuringThreshold控制的是什么？
        A: 对象升入老年代的年龄
     
