@@ -14,13 +14,9 @@
     4.对象头具体包括什么? (markword klasspointer)synchronized锁信息
     5.对象怎么定位? (直接间接)
     6.对象怎么分配? (栈上-线程本地- Eden -0ld)
-    7.object。= new Object()在内存中占用多少字节?
+    7.object o = new Object()在内存中占用多少字节?
 
-#2、volitile作用
-    线程可见
-        
-    禁止指令重排
-#3、
+#2、
     1. -XX:MaxTenuringThreshold控制的是什么？
        A: 对象升入老年代的年龄
     
