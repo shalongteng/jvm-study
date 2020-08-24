@@ -40,23 +40,24 @@
                 </exclusion>
             </exclusions>
         </dependency>
-<<<<<<< HEAD
-=======
         <!-- cglib 动态代理依赖 begin -->
         <dependency>
             <groupId>cglib</groupId>
             <artifactId>cglib</artifactId>
             <version>3.2.5</version>
         </dependency>
->>>>>>> 78a233db51c1b6d840f7ba68b2fbe7129bad78ac
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
         </dependency>
-<<<<<<< HEAD
-=======
         <!-- cglib 动态代理依赖 stop -->
->>>>>>> 78a233db51c1b6d840f7ba68b2fbe7129bad78ac
+
+        <!--java object layout-->
+        <dependency>
+            <groupId>org.openjdk.jol</groupId>
+            <artifactId>jol-core</artifactId>
+            <version>0.9</version>
+        </dependency>
     </dependencies>
 
     <build>
